@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -59,4 +59,465 @@
     </div>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
+</html> -->
+
+
+```html
+
+<!DOCTYPE html>
+
+<html lang="ru">
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>Библиотечная картотека</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script src="{{ url_for('static', filename='xlsx.full.min.js') }}"></script>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Библиотечная картотека</h1>
+
+<div class="controls">
+
+<button id="addBookBtn">Добавить книгу</button>
+
+<button id="importBtn">Импорт из Excel</button>
+
+<input type="file" id="excelFile" accept=".xlsx, .xls" hidden>
+
+<input type="text" id="searchInput" placeholder="Поиск по автору, названию или жанру...">
+
+<select id="sortSelect">
+
+<option value="author">Автор (А-Я)</option>
+
+<option value="author_desc">Автор (Я-А)</option>
+
+<option value="title">Название (А-Я)</option>
+
+<option value="title_desc">Название (Я-А)</option>
+
+</select>
+
+</div>
+
+<div id="addBookForm" class="modal" style="display:none;">
+
+<div class="modal-content">
+
+<span class="close">&times;</span>
+
+<h2>Добавить книгу</h2>
+
+<form id="bookForm">
+
+<label>Автор*: <input type="text" name="author" required></label>
+
+<label>Название*: <input type="text" name="title" required></label>
+
+<label>Жанр: <input type="text" name="genre"></label>
+
+<label>Количество: <input type="text" name="quantity"></label>
+
+<label>Местоположение: <input type="text" name="location"></label>
+
+<label>ID: <input type="text" name="book_id"></label>
+
+<label>Примечания: <textarea name="notes"></textarea></label>
+
+<button type="submit">Сохранить</button>
+
+</form>
+
+</div>
+
+</div>
+
+<table id="bookTable">
+
+<thead>
+
+<tr>
+
+<th>Автор</th>
+
+<th>Название</th>
+
+<th>Жанр</th>
+
+<th>Количество</th>
+
+<th>Местоположение</th>
+
+<th>ID</th>
+
+<th>Примечания</th>
+
+<th>Действия</th>
+
+</tr>
+
+</thead>
+
+<tbody id="bookTableBody"></tbody>
+
+</table>
+
+</div>
+
+<script>
+
+// Здесь будет весь JavaScript код, который я предоставил в предыдущем сообщении
+
+// Вставьте сюда весь код из static/script.js (который я отправил в последнем сообщении)
+
+document.addEventListener('DOMContentLoaded', () => {
+
+let books = JSON.parse(localStorage.getItem('books')) || [];
+
+renderTable(books);
+
+// Открытие формы добавления
+
+document.getElementById('addBookBtn').addEventListener('click', () => {
+
+resetForm();
+
+document.getElementById('addBookForm').style.display = 'block';
+
+});
+
+// Закрытие формы
+
+document.querySelector('.close').addEventListener('click', () => {
+
+document.getElementById('addBookForm').style.display = 'none';
+
+});
+
+// Открытие диалога импорта
+
+document.getElementById('importBtn').addEventListener('click', () => {
+
+document.getElementById('excelFile').click();
+
+});
+
+// Обработка импорта Excel
+
+document.getElementById('excelFile').addEventListener('change', handleExcelImport);
+
+// Поиск
+
+document.getElementById('searchInput').addEventListener('input', (e) => {
+
+const query = e.target.value.toLowerCase();
+
+const filtered = books.filter(book =>
+
+(book.author && book.author.toLowerCase().includes(query)) ||
+
+(book.title && book.title.toLowerCase().includes(query)) ||
+
+(book.genre && book.genre.toLowerCase().includes(query))
+
+);
+
+renderTable(filtered);
+
+});
+
+// Сортировка
+
+document.getElementById('sortSelect').addEventListener('change', (e) => {
+
+const sortBy = e.target.value;
+
+let sorted = [...books];
+
+switch(sortBy) {
+
+case 'author':
+
+sorted.sort((a, b) => (a.author || '').localeCompare(b.author || ''));
+
+break;
+
+case 'author_desc':
+
+sorted.sort((a, b) => (b.author || '').localeCompare(a.author || ''));
+
+break;
+
+case 'title':
+
+sorted.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+
+break;
+
+case 'title_desc':
+
+sorted.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
+
+break;
+
+}
+
+renderTable(sorted);
+
+});
+
+// Обработчик формы
+
+document.getElementById('bookForm').addEventListener('submit', function(e) {
+
+e.preventDefault();
+
+const form = e.target;
+
+const formData = new FormData(form);
+
+const bookData = {
+
+author: formData.get('author'),
+
+title: formData.get('title'),
+
+genre: formData.get('genre') || '',
+
+quantity: formData.get('quantity') || '',
+
+location: formData.get('location') || '',
+
+book_id: formData.get('book_id') || '',
+
+notes: formData.get('notes') || ''
+
+};
+
+if (form.dataset.editId) {
+
+// Редактирование существующей книги
+
+const id = form.dataset.editId;
+
+books = books.map(book =>
+
+book.id === id ? {...bookData, id} : book
+
+);
+
+delete form.dataset.editId;
+
+} else {
+
+// Добавление новой книги
+
+const newBook = {
+
+id: Date.now().toString(),
+
+...bookData
+
+};
+
+books.push(newBook);
+
+}
+
+saveBooks();
+
+renderTable(books);
+
+resetForm();
+
+document.getElementById('addBookForm').style.display = 'none';
+
+});
+
+function handleExcelImport(e) {
+
+const file = e.target.files[0];
+
+if (!file) return;
+
+const reader = new FileReader();
+
+reader.onload = function(event) {
+
+const data = new Uint8Array(event.target.result);
+
+const workbook = XLSX.read(data, {type: 'array'});
+
+const sheetName = workbook.SheetNames[0];
+
+const worksheet = workbook.Sheets[sheetName];
+
+const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+const importedBooks = jsonData.map(item => ({
+
+id: (Date.now() + Math.random()).toString(),
+
+author: item['Автор'] || '',
+
+title: item['Название'] || '',
+
+genre: item['Жанр'] || '',
+
+quantity: item['Кол-во экземпляров, частей, томов'] || '',
+
+location: item['МЕСТОПОЛОЖЕНИЕ(№СТЕЛЛАЖА+№ПОЛКИ)'] || '',
+
+book_id: item['ID'] || '',
+
+notes: item['ПРИМЕЧАНИЯ/СОСТОЯНИЕ/НАЛИЧИЕ'] || ''
+
+}));
+
+books = [...books, ...importedBooks];
+
+saveBooks();
+
+renderTable(books);
+
+e.target.value = '';
+
+};
+
+reader.readAsArrayBuffer(file);
+
+}
+
+function renderTable(booksArray) {
+
+const tbody = document.getElementById('bookTableBody');
+
+tbody.innerHTML = '';
+
+booksArray.forEach(book => {
+
+const row = document.createElement('tr');
+
+row.innerHTML = `
+
+<td>${book.author}</td>
+
+<td>${book.title}</td>
+
+<td>${book.genre}</td>
+
+<td>${book.quantity}</td>
+
+<td>${book.location}</td>
+
+<td>${book.book_id}</td>
+
+<td>${book.notes}</td>
+
+<td class="actions">
+
+<button class="editBtn" data-id="${book.id}">✏️</button>
+
+<button class="deleteBtn" data-id="${book.id}">❌</button>
+
+</td>
+
+`;
+
+tbody.appendChild(row);
+
+});
+
+// Обработчики для кнопок
+
+document.querySelectorAll('.deleteBtn').forEach(btn => {
+
+btn.addEventListener('click', () => {
+
+const id = btn.dataset.id;
+
+books = books.filter(book => book.id !== id);
+
+saveBooks();
+
+renderTable(books);
+
+});
+
+});
+
+document.querySelectorAll('.editBtn').forEach(btn => {
+
+btn.addEventListener('click', () => {
+
+const id = btn.dataset.id;
+
+const book = books.find(b => b.id === id);
+
+if (book) openEditForm(book);
+
+});
+
+});
+
+}
+
+function openEditForm(book) {
+
+const form = document.getElementById('bookForm');
+
+form.querySelector('[name="author"]').value = book.author || '';
+
+form.querySelector('[name="title"]').value = book.title || '';
+
+form.querySelector('[name="genre"]').value = book.genre || '';
+
+form.querySelector('[name="quantity"]').value = book.quantity || '';
+
+form.querySelector('[name="location"]').value = book.location || '';
+
+form.querySelector('[name="book_id"]').value = book.book_id || '';
+
+form.querySelector('[name="notes"]').value = book.notes || '';
+
+form.dataset.editId = book.id;
+
+document.getElementById('addBookForm').style.display = 'block';
+
+}
+
+function resetForm() {
+
+const form = document.getElementById('bookForm');
+
+form.reset();
+
+delete form.dataset.editId;
+
+}
+
+function saveBooks() {
+
+localStorage.setItem('books', JSON.stringify(books));
+
+}
+
+});
+
+</script>
+
+</body>
+
 </html>
