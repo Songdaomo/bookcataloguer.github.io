@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Библиотечная картотека</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='xlsx.full.min.js') }}"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Библиотечная картотека</h1>
+        
+        <div class="controls">
+            <button id="addBookBtn">Добавить книгу</button>
+            <button id="importBtn">Импорт из Excel</button>
+            <input type="file" id="excelFile" accept=".xlsx, .xls" hidden>
+            <input type="text" id="searchInput" placeholder="Поиск по автору, названию или жанру...">
+            <select id="sortSelect">
+                <option value="author">Автор (А-Я)</option>
+                <option value="author_desc">Автор (Я-А)</option>
+                <option value="title">Название (А-Я)</option>
+                <option value="title_desc">Название (Я-А)</option>
+            </select>
+        </div>
+
+        <div id="addBookForm" class="modal" style="display:none;">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Добавить книгу</h2>
+                <form id="bookForm">
+                    <label>Автор*: <input type="text" name="author" required></label>
+                    <label>Название*: <input type="text" name="title" required></label>
+                    <label>Жанр: <input type="text" name="genre"></label>
+                    <label>Количество: <input type="text" name="quantity"></label>
+                    <label>Местоположение: <input type="text" name="location"></label>
+                    <label>ID: <input type="text" name="book_id"></label>
+                    <label>Примечания: <textarea name="notes"></textarea></label>
+                    <button type="submit">Сохранить</button>
+                </form>
+            </div>
+        </div>
+
+        <table id="bookTable">
+            <thead>
+                <tr>
+                    <th>Автор</th>
+                    <th>Название</th>
+                    <th>Жанр</th>
+                    <th>Количество</th>
+                    <th>Местоположение</th>
+                    <th>ID</th>
+                    <th>Примечания</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody id="bookTableBody"></tbody>
+        </table>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
