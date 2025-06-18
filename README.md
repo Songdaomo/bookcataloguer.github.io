@@ -1,2 +1,2 @@
-# smth.github.io
+# bookcatalogue.github.io
 
